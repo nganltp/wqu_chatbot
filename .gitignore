@@ -1,0 +1,39 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# Test and lint caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Local application data and logs
+data/
+*.log
+docs/
+queue-prompt.txt
+AGENTS.md
+
+# Generated frontend and Cloudflare files
+web/config.js
+node_modules/
+.wrangler/
+
+# Editor and operating-system files
+.vscode/
+!.vscode/settings.json
+.DS_Store
