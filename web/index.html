@@ -9,6 +9,7 @@
       body { margin: 0; }
       main { max-width: 760px; min-height: 100vh; margin: auto; padding: 32px 18px; box-sizing: border-box; }
       h1 { margin: 0; font-size: 1.7rem; } p { color: #5d687c; line-height: 1.5; }
+      .chat-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; } .chat-header p { margin: 8px 0 0; }
       #chat { display: grid; gap: 14px; margin: 28px 0; }
       .message { padding: 14px 16px; border-radius: 12px; background: white; box-shadow: 0 1px 4px #17203312; white-space: pre-wrap; line-height: 1.5; }
       .user { background: #e5edff; margin-left: 48px; } .assistant { margin-right: 24px; }
@@ -16,13 +17,19 @@
       form { display: flex; gap: 10px; position: sticky; bottom: 10px; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 4px 24px #1720331c; }
       input { flex: 1; min-width: 0; border: 1px solid #c9d2e3; border-radius: 9px; padding: 12px; font: inherit; }
       button { border: 0; border-radius: 9px; padding: 12px 16px; background: #1e54c5; color: white; font: inherit; cursor: pointer; }
+      .secondary { align-self: flex-end; background: #e5edff; color: #1e54c5; white-space: nowrap; }
       button:disabled { opacity: .6; cursor: wait; } .error { color: #b42318; }
     </style>
   </head>
   <body>
     <main>
-      <h1>WQU Support Chatbot</h1>
-      <p>Ask a question about WQU procedures. Answers include links to the official source.</p>
+      <div class="chat-header">
+        <div>
+          <h1>WQU Support Chatbot</h1>
+          <p>Ask a question about WQU procedures. Answers include links to the official source.</p>
+        </div>
+        <button id="clear-chat" class="secondary" type="button">New chat</button>
+      </div>
       <section id="chat" aria-live="polite"></section>
       <form id="chat-form">
         <input id="question" placeholder="Ask a WQU support question" autocomplete="off" required />
