@@ -84,12 +84,20 @@ All configuration is loaded from `.env`.
 | `OPENAI_MODEL` | `gpt-5.6-luna` | OpenAI model used for chat generation. |
 | `OPENAI_REASONING_EFFORT` | `low` | Reasoning effort: `none`, `low`, `medium`, `high`, `xhigh`, or `max`. |
 | `CORS_ORIGINS` | local development origins | Comma-separated browser origins allowed to call the API. |
-| `TOP_K` | `5` | Number of chunks retrieved per question. |
-| `MIN_RETRIEVAL_SCORE` | `0.35` | Minimum retrieval similarity score used for an answer. |
+| `TOP_K` | `5` | Number of chunks sent to the LLM after hybrid ranking. |
+| `MIN_RETRIEVAL_SCORE` | `0.35` | Minimum dense cosine similarity for a dense candidate. |
+| `HYBRID_DENSE_CANDIDATES` | `10` | Dense candidates collected before fusion. |
+| `HYBRID_KEYWORD_CANDIDATES` | `10` | BM25 keyword candidates collected before fusion. |
+| `HYBRID_MIN_KEYWORD_SCORE` | `1.0` | Minimum BM25 score for a keyword candidate. |
+| `HYBRID_RRF_RANK_CONSTANT` | `60` | Reciprocal Rank Fusion smoothing constant. |
 
 The API key remains on the backend only. For a support chatbot, the default `low` reasoning effort
 balances response quality, latency, and token cost; validate it against the evaluation set before
 raising it.
+
+Retrieval uses a hybrid of dense cosine similarity and an in-process BM25 index over the Qdrant
+payloads. It fuses only candidates that meet their dense or BM25 relevance threshold with
+Reciprocal Rank Fusion (RRF), then sends the final `TOP_K` chunks to the LLM.
 
 ## API
 

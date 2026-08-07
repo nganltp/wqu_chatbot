@@ -10,7 +10,7 @@ EXPECTED_URL = "https://help.wqu.edu/en/articles/1"
 
 
 class FakeStore:
-    def search(self, question: str):
+    def search_hybrid(self, question: str):
         return [
             (
                 SourceChunk(

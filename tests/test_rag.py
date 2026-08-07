@@ -29,7 +29,7 @@ def test_answer_uses_openai_responses_api():
     response_calls = []
 
     class Store:
-        def search(self, query):
+        def search_hybrid(self, query):
             return [(chunk, 0.9)]
 
     class Responses:

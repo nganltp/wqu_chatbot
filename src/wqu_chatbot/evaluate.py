@@ -98,7 +98,7 @@ def evaluate_case(service: Any, case: EvaluationCase, generate_answers: bool) ->
     started_at = perf_counter()
     try:
         retrieval_started_at = perf_counter()
-        retrieved = service.store.search(case.question)
+        retrieved = service.store.search_hybrid(case.question)
         result["retrieval_latency_ms"] = round((perf_counter() - retrieval_started_at) * 1_000, 1)
         result["retrieved"] = [
             {"url": chunk.url, "title": chunk.title, "score": round(score, 5)}
@@ -233,6 +233,10 @@ def main() -> None:
             "openai_reasoning_effort": service.settings.openai_reasoning_effort,
             "top_k": service.settings.top_k,
             "min_retrieval_score": service.settings.min_retrieval_score,
+            "hybrid_dense_candidates": service.settings.hybrid_dense_candidates,
+            "hybrid_keyword_candidates": service.settings.hybrid_keyword_candidates,
+            "hybrid_min_keyword_score": service.settings.hybrid_min_keyword_score,
+            "hybrid_rrf_rank_constant": service.settings.hybrid_rrf_rank_constant,
         },
         "summary": summary,
         "results": results,

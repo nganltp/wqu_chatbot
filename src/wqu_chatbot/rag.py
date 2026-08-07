@@ -37,12 +37,7 @@ class RAGService:
         history_text = " ".join(
             message.content for message in history[-4:] if message.role == "user"
         )
-        retrieved = self.store.search(f"{history_text} {question}".strip())
-        usable = [
-            (chunk, score)
-            for chunk, score in retrieved
-            if score >= self.settings.min_retrieval_score
-        ]
+        usable = self.store.search_hybrid(f"{history_text} {question}".strip())
         if not usable:
             return ChatResponse(
                 answer=NOT_FOUND_RESPONSE,

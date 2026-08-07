@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 
 from .config import get_settings
 from .models import SourceChunk
+from .retrieval import BM25Index, reciprocal_rank_fusion
 
 
 @lru_cache
@@ -26,6 +27,7 @@ class VectorStore:
             else QdrantClient(url=self.settings.qdrant_url)
         )
         self.embedder = get_embedder()
+        self.keyword_index: BM25Index | None = None
 
     def _embed(self, texts: list[str]) -> list[list[float]]:
         vectors = self.embedder.encode(texts, normalize_embeddings=True, show_progress_bar=False)
@@ -50,6 +52,7 @@ class VectorStore:
                 for chunk, vector in zip(batch, vectors, strict=True)
             ]
             self.client.upsert(self.settings.qdrant_collection, points=points, wait=True)
+        self.keyword_index = None
 
     def search(self, query: str, limit: int | None = None) -> list[tuple[SourceChunk, float]]:
         self.ensure_collection()
@@ -60,6 +63,50 @@ class VectorStore:
             with_payload=True,
         ).points
         return [(SourceChunk.model_validate(hit.payload), hit.score) for hit in results]
+
+    def search_hybrid(
+        self, query: str, limit: int | None = None
+    ) -> list[tuple[SourceChunk, float]]:
+        """Fuse eligible dense and BM25 rankings with reciprocal rank fusion."""
+        dense = self.search(query, limit=self.settings.hybrid_dense_candidates)
+        keyword = self.keyword_search(query, limit=self.settings.hybrid_keyword_candidates)
+        eligible_dense = [
+            chunk for chunk, score in dense if score >= self.settings.min_retrieval_score
+        ]
+        eligible_keyword = [
+            result.chunk
+            for result in keyword
+            if result.score >= self.settings.hybrid_min_keyword_score
+        ]
+        fused = reciprocal_rank_fusion(
+            eligible_dense,
+            eligible_keyword,
+            self.settings.hybrid_rrf_rank_constant,
+        )
+        return fused[: limit or self.settings.top_k]
+
+    def keyword_search(self, query: str, limit: int) -> list:
+        if self.keyword_index is None:
+            self.keyword_index = BM25Index(
+                [(chunk, self._document_for_embedding(chunk)) for chunk in self._all_chunks()]
+            )
+        return self.keyword_index.search(query, limit)
+
+    def _all_chunks(self) -> list[SourceChunk]:
+        self.ensure_collection()
+        chunks: list[SourceChunk] = []
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=self.settings.qdrant_collection,
+                limit=256,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            chunks.extend(SourceChunk.model_validate(point.payload) for point in points)
+            if offset is None:
+                return chunks
 
     @staticmethod
     def _document_for_embedding(chunk: SourceChunk) -> str:

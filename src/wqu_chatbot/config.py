@@ -20,6 +20,10 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:8000,http://localhost:5500,http://127.0.0.1:5500"
     top_k: int = 5
     min_retrieval_score: float = 0.35
+    hybrid_dense_candidates: int = 10
+    hybrid_keyword_candidates: int = 10
+    hybrid_min_keyword_score: float = 1.0
+    hybrid_rrf_rank_constant: int = 60
 
 
 @lru_cache

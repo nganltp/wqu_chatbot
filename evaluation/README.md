@@ -12,7 +12,7 @@ The seed set has 18 answerable procedural questions and 6 out-of-scope questions
 
 ## Run a baseline
 
-From the repository root, with the local Qdrant index available and Hugging Face configured:
+From the repository root, with the local Qdrant index and OpenAI API key configured:
 
 ```bash
 python -m wqu_chatbot.evaluate
@@ -28,7 +28,7 @@ The JSON report contains complete retrieved chunks, responses, settings, and mac
 
 ## Metrics
 
-- **Recall@k:** percentage of answerable cases whose expected URL appears in the top `TOP_K` retrieved chunks.
+- **Recall@k:** percentage of answerable cases whose expected URL appears in the final hybrid top `TOP_K` chunks.
 - **Inline citation rate:** percentage of successfully generated answerable responses containing at least one returned citation label such as `[S1]`.
 - **Automatic fallback correctness:** percentage of successfully generated unanswerable cases that exactly return the safe fallback and no sources.
 - **Latency and error rate:** measured per case and summarised for the run.
