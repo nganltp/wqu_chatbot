@@ -42,13 +42,20 @@ The data model already supports `course` and `chapter` metadata, so authorised c
    docker compose up -d qdrant
    ```
 
-4. Crawl and index the public Help Center:
+4. Crawl the public Help Center to local documents only:
 
    ```bash
-   python -m wqu_chatbot.ingest_help --verbose
+   python -m wqu_chatbot.crawl_help --verbose
    ```
 
-5. Start the API:
+5. Review or edit the complete local documents in `data/wqu_help_raw/documents/help/`, then
+   chunk and index them:
+
+   ```bash
+   python -m wqu_chatbot.ingest_help
+   ```
+
+6. Start the API:
 
    ```bash
    uvicorn wqu_chatbot.api:app --reload
@@ -56,7 +63,20 @@ The data model already supports `course` and `chapter` metadata, so authorised c
 
    The health endpoint is available at `http://127.0.0.1:8000/health`.
 
-The initial ingest downloads the embedding model. Re-run the ingest command to refresh Help Center content; stable chunk IDs allow Qdrant to upsert existing records.
+`crawl_help` never chunks or writes to Qdrant. It stores one complete source document per Help Center
+article at `data/wqu_help_raw/documents/help/`: `metadata/help-<id>.json` holds metadata and
+`content/help-<id>.md` holds the full extracted content. The two files share the same ID. `ingest_help`
+reads only these local folders, then chunks and writes to Qdrant. A new crawl updates matching local
+document files; stable chunk IDs allow the later ingest to upsert existing records.
+
+Use `crawl_help --output-dir <directory>` or `ingest_help --input-dir <directory>` to use another
+local source directory.
+
+To save an authorised WQU SCORM launch as one complete, pre-chunk learning document (without
+quiz/answer blocks), run `python -m wqu_chatbot.ingest_scorm '<launch URL>'`. Its default output
+directory is `data/wqu_help_raw/documents/100-orientation-course/`, using the same `metadata/<id>.json`
+and `content/<id>.md` layout as Help Center documents. The launch URL's query parameters are not
+persisted.
 
 ### Docker-free Qdrant mode
 

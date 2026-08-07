@@ -3,13 +3,15 @@
 import time
 from collections import deque
 from collections.abc import Callable
+from datetime import UTC, datetime
+from pathlib import Path
 from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
 from bs4 import BeautifulSoup
 
-from .chunking import make_chunks
-from .models import SourceChunk
+from .local_documents import document_id_for_url, write_document
+from .models import SourceDocument
 
 ROOT_URL = "https://help.wqu.edu/en/"
 ALLOWED_PREFIXES = ("/en/collections/", "/en/articles/")
@@ -32,9 +34,17 @@ def _text(element) -> str:
 
 
 class HelpCenterCrawler:
-    def __init__(self, *, delay_seconds: float = 0.35, timeout_seconds: float = 12.0):
+    def __init__(
+        self,
+        *,
+        delay_seconds: float = 0.35,
+        timeout_seconds: float = 12.0,
+        raw_output: Path | None = Path("data/wqu_help_raw/documents/help"),
+    ):
         self.delay_seconds = delay_seconds
         self.timeout_seconds = timeout_seconds
+        self.raw_output = raw_output
+        self.raw_documents_saved = 0
         self.session = requests.Session()
         self.session.max_redirects = 5
         self.session.headers["User-Agent"] = "WQU-Support-RAG/0.1 (public help-center indexer)"
@@ -43,10 +53,11 @@ class HelpCenterCrawler:
         self,
         max_pages: int = 1_000,
         on_page: Callable[[int, str], None] | None = None,
-    ) -> list[SourceChunk]:
+    ) -> list[SourceDocument]:
         queue: deque[str] = deque([ROOT_URL])
         visited: set[str] = set()
-        chunks: list[SourceChunk] = []
+        documents: list[SourceDocument] = []
+        self._prepare_raw_output()
 
         while queue and len(visited) < max_pages:
             url = _canonical(queue.popleft())
@@ -76,7 +87,31 @@ class HelpCenterCrawler:
                 body = _text(main)
                 category_link = soup.select_one('a[href*="/en/collections/"]')
                 category = _text(category_link) or None
-                chunks.extend(make_chunks(text=body, title=title, url=url, category=category))
+                documents.append(
+                    self._save_raw_document(url=url, title=title, category=category, content=body)
+                )
 
             time.sleep(self.delay_seconds)
-        return chunks
+        return documents
+
+    def _prepare_raw_output(self) -> None:
+        if self.raw_output is None:
+            return
+        self.raw_output.mkdir(parents=True, exist_ok=True)
+
+    def _save_raw_document(
+        self, *, url: str, title: str, category: str | None, content: str
+    ) -> SourceDocument:
+        document = SourceDocument(
+            id=document_id_for_url(url),
+            url=url,
+            title=title,
+            category=category,
+            fetched_at=datetime.now(UTC).isoformat(),
+            content=content,
+        )
+        if self.raw_output is None:
+            return document
+        write_document(self.raw_output, document)
+        self.raw_documents_saved += 1
+        return document

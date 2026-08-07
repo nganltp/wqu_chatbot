@@ -14,6 +14,20 @@ class SourceChunk(BaseModel):
     chapter: str | None = None
 
 
+class SourceDocument(BaseModel):
+    """A complete source document stored locally before chunking."""
+
+    id: str
+    content: str
+    title: str
+    url: str
+    source_type: Literal["procedure", "lecture"] = "procedure"
+    category: str | None = None
+    course: str | None = None
+    chapter: str | None = None
+    fetched_at: str | None = None
+
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=8_000)
