@@ -4,8 +4,10 @@ const form = document.querySelector("#chat-form");
 const questionInput = document.querySelector("#question");
 const sendButton = document.querySelector("#send");
 const clearChatButton = document.querySelector("#clear-chat");
+const sampleQuestions = document.querySelector(".sample-questions");
 const HISTORY_STORAGE_KEY = "wqu-chat-history-v1";
 const MAX_HISTORY_MESSAGES = 12;
+const INLINE_MARKDOWN = /(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
 const history = loadHistory();
 
 function loadHistory() {
@@ -56,11 +58,121 @@ function saveHistory() {
   }
 }
 
+function appendInlineMarkdown(container, text) {
+  let lastIndex = 0;
+  for (const match of text.matchAll(INLINE_MARKDOWN)) {
+    container.append(document.createTextNode(text.slice(lastIndex, match.index)));
+    if (match[2]) {
+      const link = document.createElement("a");
+      link.href = match[3];
+      link.target = "_blank";
+      link.rel = "noreferrer";
+      link.textContent = match[2];
+      container.append(link);
+    } else if (match[4]) {
+      const strong = document.createElement("strong");
+      strong.textContent = match[4];
+      container.append(strong);
+    } else if (match[5]) {
+      const code = document.createElement("code");
+      code.textContent = match[5];
+      container.append(code);
+    } else {
+      const emphasis = document.createElement("em");
+      emphasis.textContent = match[6];
+      container.append(emphasis);
+    }
+    lastIndex = match.index + match[0].length;
+  }
+  container.append(document.createTextNode(text.slice(lastIndex)));
+}
+
+function renderMarkdown(text) {
+  const container = document.createElement("div");
+  container.className = "markdown";
+  let paragraphLines = [];
+  let list = null;
+  let codeLines = null;
+
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return;
+    const paragraph = document.createElement("p");
+    appendInlineMarkdown(paragraph, paragraphLines.join(" "));
+    container.append(paragraph);
+    paragraphLines = [];
+  };
+  const flushList = () => {
+    if (!list) return;
+    container.append(list);
+    list = null;
+  };
+
+  for (const line of text.split("\n")) {
+    if (line.trim().startsWith("```")) {
+      flushParagraph();
+      flushList();
+      if (codeLines === null) {
+        codeLines = [];
+      } else {
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = codeLines.join("\n");
+        pre.append(code);
+        container.append(pre);
+        codeLines = null;
+      }
+      continue;
+    }
+    if (codeLines !== null) {
+      codeLines.push(line);
+      continue;
+    }
+
+    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    const listItem = line.match(/^(\d+)\.\s+(.+)$/) || line.match(/^[-*]\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      flushList();
+      const element = document.createElement(`h${heading[1].length}`);
+      appendInlineMarkdown(element, heading[2]);
+      container.append(element);
+    } else if (listItem) {
+      flushParagraph();
+      const isOrdered = /^\d+\./.test(line);
+      const tagName = isOrdered ? "OL" : "UL";
+      if (!list || list.tagName !== tagName) {
+        flushList();
+        list = document.createElement(tagName.toLowerCase());
+      }
+      const item = document.createElement("li");
+      appendInlineMarkdown(item, listItem[isOrdered ? 2 : 1]);
+      list.append(item);
+    } else if (!line.trim()) {
+      flushParagraph();
+      flushList();
+    } else {
+      flushList();
+      paragraphLines.push(line.trim());
+    }
+  }
+
+  if (codeLines !== null) {
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    code.textContent = codeLines.join("\n");
+    pre.append(code);
+    container.append(pre);
+  }
+  flushParagraph();
+  flushList();
+  return container;
+}
+
 function addMessage(text, role, sources = [], scroll = true) {
   const message = document.createElement("article");
   message.className = `message ${role}`;
   const content = document.createElement("div");
-  content.textContent = text;
+  content.append(renderMarkdown(text));
   message.append(content);
 
   if (sources.length) {
@@ -103,12 +215,21 @@ function clearChat() {
   history.splice(0, history.length);
   window.localStorage.removeItem(HISTORY_STORAGE_KEY);
   chat.replaceChildren();
+  sampleQuestions.hidden = false;
   questionInput.focus();
 }
 
 restoreHistory();
+sampleQuestions.hidden = history.length > 0;
 
 clearChatButton.addEventListener("click", clearChat);
+
+for (const button of document.querySelectorAll(".sample-question")) {
+  button.addEventListener("click", () => {
+    questionInput.value = button.dataset.question || "";
+    questionInput.focus();
+  });
+}
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -120,6 +241,7 @@ form.addEventListener("submit", async (event) => {
   }
 
   addMessage(question, "user");
+  sampleQuestions.hidden = true;
   questionInput.value = "";
   sendButton.disabled = true;
   clearChatButton.disabled = true;

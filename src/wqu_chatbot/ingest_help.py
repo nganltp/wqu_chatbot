@@ -12,10 +12,14 @@ def main() -> None:
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
 
-    progress = (lambda page, url: print(f"Crawling page {page}: {url}", flush=True)) if args.verbose else None
-    chunks = HelpCenterCrawler(
-        delay_seconds=args.delay, timeout_seconds=args.timeout
-    ).crawl(max_pages=args.max_pages, on_page=progress)
+    progress = (
+        (lambda page, url: print(f"Crawling page {page}: {url}", flush=True))
+        if args.verbose
+        else None
+    )
+    chunks = HelpCenterCrawler(delay_seconds=args.delay, timeout_seconds=args.timeout).crawl(
+        max_pages=args.max_pages, on_page=progress
+    )
     if not chunks:
         raise RuntimeError("No WQU Help Center article chunks were found.")
     VectorStore().upsert(chunks)

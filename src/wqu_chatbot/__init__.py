@@ -1,2 +1,1 @@
 """WQU support chatbot package."""
-

@@ -177,6 +177,20 @@ Run the test suite with:
 pytest
 ```
 
+## RAG evaluation
+
+Before changing retrieval, chunking, or prompts, run the English evaluation seed set against the
+current index:
+
+```bash
+python -m wqu_chatbot.evaluate
+```
+
+It records retrieval recall@k, citation presence, fallback behavior, latency, errors, and all
+case-level evidence in `data/evaluations/`. The CSV report also has fields for required human
+groundedness and citation-correctness review. See [evaluation/README.md](evaluation/README.md)
+for the dataset format, scoring rubric, and retrieval-only mode.
+
 ## Adding authorised course material
 
 Create another ingester that emits `SourceChunk` records with `source_type="lecture"` plus `course`, `chapter`, `title`, and `url` metadata. Only index material that WQU authorises for chatbot use, and add access control before exposing private learning content.

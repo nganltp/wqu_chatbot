@@ -10,8 +10,11 @@ def test_chunk_text_preserves_content_and_overlap() -> None:
 
 
 def test_chunk_ids_are_stable() -> None:
-    first = make_chunks(text="Useful content", title="Title", url="https://example.test/a", category=None)
-    second = make_chunks(text="Useful content", title="Title", url="https://example.test/a", category=None)
+    first = make_chunks(
+        text="Useful content", title="Title", url="https://example.test/a", category=None
+    )
+    second = make_chunks(
+        text="Useful content", title="Title", url="https://example.test/a", category=None
+    )
     assert first[0].id == second[0].id
     assert first[0].source_type == "procedure"
-

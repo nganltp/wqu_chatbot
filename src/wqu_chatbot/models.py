@@ -35,4 +35,3 @@ class SourceReference(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     sources: list[SourceReference]
-

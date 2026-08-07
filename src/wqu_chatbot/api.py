@@ -35,4 +35,6 @@ def chat(request: ChatRequest) -> ChatResponse:
     try:
         return get_service().answer(request.question, request.history)
     except Exception as error:
-        raise HTTPException(status_code=503, detail="Chat service is temporarily unavailable") from error
+        raise HTTPException(
+            status_code=503, detail="Chat service is temporarily unavailable"
+        ) from error

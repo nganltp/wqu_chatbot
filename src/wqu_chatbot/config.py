@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     hf_token: str | None = None
     hf_model: str = "Qwen/Qwen3-8B:fastest"
     hf_provider: str = "auto"
-    cors_origins: str = "http://localhost:8000,http://localhost:5500"
+    cors_origins: str = "http://localhost:8000,http://localhost:5500,http://127.0.0.1:5500"
     top_k: int = 5
     min_retrieval_score: float = 0.35
 
