@@ -9,24 +9,24 @@ The data model already supports `course` and `chapter` metadata, so authorised c
 - **API:** FastAPI
 - **Vector database:** [Qdrant](https://qdrant.tech/), using cosine similarity and metadata-ready records
 - **Embeddings:** `BAAI/bge-m3`, suitable for English and Vietnamese queries
-- **Language model:** Qwen3 8B through Hugging Face Inference Providers
+- **Language model:** OpenAI Responses API (default: `gpt-5.6-luna`)
 - **Frontend:** static HTML, CSS, and JavaScript in `web/`
 
 ## Requirements
 
 - Python 3.11 or later
-- A Hugging Face token with access to Inference Providers
+- An OpenAI API key
 - Docker and Docker Compose for the default Qdrant setup, or a local filesystem for Docker-free Qdrant mode
 
 ## Local setup
 
-1. Create your local environment file and add your Hugging Face token:
+1. Create your local environment file and add your OpenAI API key:
 
    ```bash
    cp .env.example .env
    ```
 
-   Set `HF_TOKEN` in `.env`. Never commit this file.
+   Set `OPENAI_API_KEY` in `.env`. Never commit this file.
 
 2. Create and activate a virtual environment, then install the project:
 
@@ -79,14 +79,17 @@ All configuration is loaded from `.env`.
 | `QDRANT_LOCAL_PATH` | unset | Local persistent Qdrant directory; overrides `QDRANT_URL`. |
 | `EMBEDDING_MODEL` | `BAAI/bge-m3` | Sentence-transformer model used for retrieval. |
 | `EMBEDDING_DEVICE` | `cpu` | Embedding device, such as `cpu` or `cuda`. |
-| `HF_TOKEN` | unset | Hugging Face access token. |
-| `HF_MODEL` | `Qwen/Qwen3-8B:fastest` | Model and routing preference for inference. |
-| `HF_PROVIDER` | `auto` | Hugging Face inference provider. |
+| `HF_TOKEN` | unset | Optional Hugging Face token for authenticated embedding-model downloads. |
+| `OPENAI_API_KEY` | unset | Server-side key used for chat generation. |
+| `OPENAI_MODEL` | `gpt-5.6-luna` | OpenAI model used for chat generation. |
+| `OPENAI_REASONING_EFFORT` | `low` | Reasoning effort: `none`, `low`, `medium`, `high`, `xhigh`, or `max`. |
 | `CORS_ORIGINS` | local development origins | Comma-separated browser origins allowed to call the API. |
 | `TOP_K` | `5` | Number of chunks retrieved per question. |
 | `MIN_RETRIEVAL_SCORE` | `0.35` | Minimum retrieval similarity score used for an answer. |
 
-The `:fastest` suffix in `HF_MODEL` lets Hugging Face select a fast available provider. You can use `:cheapest`, `:preferred`, or a supported provider via `HF_PROVIDER`. Review your Hugging Face quota and billing before production use.
+The API key remains on the backend only. For a support chatbot, the default `low` reasoning effort
+balances response quality, latency, and token cost; validate it against the evaluation set before
+raising it.
 
 ## API
 
@@ -167,7 +170,7 @@ The static frontend can be hosted on Cloudflare Pages while the FastAPI backend 
 
 Quick Tunnel URLs change after a restart. For a stable deployment, use a named Cloudflare Tunnel and a dedicated domain.
 
-`web/config.js` is public and intentionally ignored by Git. Never place `HF_TOKEN` or another secret in that file. The demo has no authentication or rate limiting, so protect the API before sharing it broadly.
+`web/config.js` is public and intentionally ignored by Git. Never place `OPENAI_API_KEY`, `HF_TOKEN`, or another secret in that file. The demo has no authentication or rate limiting, so protect the API before sharing it broadly.
 
 ## Tests
 

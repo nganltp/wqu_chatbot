@@ -137,6 +137,8 @@ def summarise(results: list[dict[str, Any]], generate_answers: bool) -> dict[str
     answerable = [result for result in results if result["answerable"]]
     unanswerable = [result for result in results if not result["answerable"]]
     completed = [result for result in results if not result["error"]]
+    generated_answerable = [result for result in answerable if result["answer"] is not None]
+    generated_unanswerable = [result for result in unanswerable if result["answer"] is not None]
     retrieval_hits = sum(result["retrieval_hit"] is True for result in answerable)
     answerable_with_inline_citation = sum(
         result["inline_citation_present"] is True for result in answerable
@@ -158,11 +160,13 @@ def summarise(results: list[dict[str, Any]], generate_answers: bool) -> dict[str
         summary.update(
             {
                 "inline_citation_rate_percent": percentage(
-                    answerable_with_inline_citation, len(answerable)
+                    answerable_with_inline_citation, len(generated_answerable)
                 ),
                 "automatic_fallback_correctness_percent": percentage(
-                    correct_fallbacks, len(unanswerable)
+                    correct_fallbacks, len(generated_unanswerable)
                 ),
+                "generated_answerable_case_count": len(generated_answerable),
+                "generated_unanswerable_case_count": len(generated_unanswerable),
             }
         )
     return summary
@@ -225,8 +229,8 @@ def main() -> None:
         "generation_enabled": generate_answers,
         "settings": {
             "embedding_model": service.settings.embedding_model,
-            "hf_model": service.settings.hf_model,
-            "hf_provider": service.settings.hf_provider,
+            "openai_model": service.settings.openai_model,
+            "openai_reasoning_effort": service.settings.openai_reasoning_effort,
             "top_k": service.settings.top_k,
             "min_retrieval_score": service.settings.min_retrieval_score,
         },

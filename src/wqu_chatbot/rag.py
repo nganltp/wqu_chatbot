@@ -1,4 +1,4 @@
-from huggingface_hub import InferenceClient
+from openai import OpenAI
 
 from .config import get_settings
 from .models import ChatMessage, ChatResponse, SourceChunk, SourceReference
@@ -29,11 +29,9 @@ class RAGService:
     def __init__(self) -> None:
         self.settings = get_settings()
         self.store = VectorStore()
-        self.llm = InferenceClient(
-            model=self.settings.hf_model,
-            provider=self.settings.hf_provider,
-            api_key=self.settings.hf_token,
-        )
+        if not self.settings.openai_api_key:
+            raise RuntimeError("OPENAI_API_KEY is not configured")
+        self.llm = OpenAI(api_key=self.settings.openai_api_key)
 
     def answer(self, question: str, history: list[ChatMessage]) -> ChatResponse:
         history_text = " ".join(
@@ -71,20 +69,19 @@ class RAGService:
             )
 
         context = "\n\n".join(context_blocks)
-        messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        messages.extend(message.model_dump() for message in history)
+        messages = [message.model_dump() for message in history]
         messages.append(
             {
                 "role": "user",
                 "content": f"Retrieved sources:\n\n{context}\n\nQuestion: {question}",
             }
         )
-        completion = self.llm.chat.completions.create(
-            model=self.settings.hf_model,
-            messages=messages,  # type: ignore[arg-type]
-            temperature=0.1,
+        completion = self.llm.responses.create(
+            model=self.settings.openai_model,
+            instructions=SYSTEM_PROMPT,
+            input=messages,
+            reasoning={"effort": self.settings.openai_reasoning_effort},
+            text={"verbosity": "low"},
         )
-        answer = (
-            completion.choices[0].message.content or "I am unable to generate a response right now."
-        )
+        answer = completion.output_text or "I am unable to generate a response right now."
         return ChatResponse(answer=answer, sources=references)

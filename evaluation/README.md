@@ -29,11 +29,12 @@ The JSON report contains complete retrieved chunks, responses, settings, and mac
 ## Metrics
 
 - **Recall@k:** percentage of answerable cases whose expected URL appears in the top `TOP_K` retrieved chunks.
-- **Inline citation rate:** percentage of answerable responses containing at least one returned citation label such as `[S1]`.
-- **Automatic fallback correctness:** percentage of unanswerable cases that exactly return the safe fallback and no sources.
+- **Inline citation rate:** percentage of successfully generated answerable responses containing at least one returned citation label such as `[S1]`.
+- **Automatic fallback correctness:** percentage of successfully generated unanswerable cases that exactly return the safe fallback and no sources.
 - **Latency and error rate:** measured per case and summarised for the run.
 
 The runner cannot establish that a source truly supports an answer. That is intentionally a human review task.
+If generation has errors, inspect `error_count` plus the generated-case counts before interpreting either generation metric.
 
 ## Human review rubric
 
