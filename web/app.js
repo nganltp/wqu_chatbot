@@ -50,6 +50,13 @@ function normalizeSources(sources) {
   });
 }
 
+function citedSources(text, sources) {
+  const labels = new Set(
+    [...text.matchAll(/\[(S\d+)\]/g)].map((match) => match[1]),
+  );
+  return normalizeSources(sources).filter((source) => labels.has(source.label));
+}
+
 function saveHistory() {
   try {
     window.localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(history));
@@ -175,10 +182,11 @@ function addMessage(text, role, sources = [], scroll = true) {
   content.append(renderMarkdown(text));
   message.append(content);
 
-  if (sources.length) {
+  const displayedSources = role === "assistant" ? citedSources(text, sources) : normalizeSources(sources);
+  if (displayedSources.length) {
     const list = document.createElement("ul");
     list.className = "sources";
-    for (const source of sources) {
+    for (const source of displayedSources) {
       const item = document.createElement("li");
       const link = document.createElement("a");
       link.href = source.url;
@@ -203,7 +211,7 @@ function restoreHistory() {
 function appendExchange(question, answer, sources) {
   history.push(
     { role: "user", content: question, sources: [] },
-    { role: "assistant", content: answer, sources: normalizeSources(sources) },
+    { role: "assistant", content: answer, sources: citedSources(answer, sources) },
   );
   if (history.length > MAX_HISTORY_MESSAGES) {
     history.splice(0, history.length - MAX_HISTORY_MESSAGES);
