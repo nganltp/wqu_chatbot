@@ -1,4 +1,5 @@
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel, Field, HttpUrl
 
@@ -34,6 +35,7 @@ class ChatMessage(BaseModel):
 
 
 class ChatRequest(BaseModel):
+    conversation_id: UUID | None = None
     question: str = Field(min_length=1, max_length=4_000)
     history: list[ChatMessage] = Field(default_factory=list, max_length=12)
 

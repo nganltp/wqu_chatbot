@@ -6,6 +6,23 @@ const sendButton = document.querySelector("#send");
 const clearChatButton = document.querySelector("#clear-chat");
 const sampleQuestions = document.querySelector(".sample-questions");
 const HISTORY_STORAGE_KEY = "wqu-chat-history-v1";
+const CONVERSATION_STORAGE_KEY = "wqu-chat-conversation-v1";
+let conversationId = loadConversationId();
+
+function loadConversationId(reset = false) {
+  let id;
+  try {
+    id = reset ? null : window.localStorage.getItem(CONVERSATION_STORAGE_KEY);
+  } catch { /* Storage may be unavailable. */ }
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "")) {
+    id = crypto.randomUUID();
+  }
+  try {
+    window.localStorage.setItem(CONVERSATION_STORAGE_KEY, id);
+  } catch { /* Keep the ID in memory for this page. */ }
+  return id;
+}
+
 const MAX_HISTORY_MESSAGES = 12;
 const INLINE_MARKDOWN = /(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
 const history = loadHistory();
@@ -221,7 +238,8 @@ function appendExchange(question, answer, sources) {
 
 function clearChat() {
   history.splice(0, history.length);
-  window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+  conversationId = loadConversationId(true);
+  try { window.localStorage.removeItem(HISTORY_STORAGE_KEY); } catch { /* Optional storage. */ }
   chat.replaceChildren();
   sampleQuestions.hidden = false;
   questionInput.focus();
@@ -259,6 +277,7 @@ form.addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         question,
+        conversation_id: conversationId,
         history: history.map(({ role, content }) => ({ role, content })),
       }),
     });

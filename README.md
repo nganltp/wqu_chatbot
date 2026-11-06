@@ -175,10 +175,30 @@ workers using the same database file. Old days are removed on subsequent accepte
 Keep this file on persistent local storage; separate hosts need a shared quota service.
 Users sharing a public IP share a quota; changing network/VPN/IP can bypass an IP-only limit.
 
-There is no central question history: the browser stores recent conversation in localStorage.
-`DEBUG_RETRIEVAL=true` emits question/retrieval details through Python INFO logging when
-configured by the operator; it is not a durable question audit log. The quota database stores
-only IP, date, and count, not question text or answers.
+Chat history is stored in `chat_requests` in the same SQLite file as `daily_usage`.
+Each validated request with a valid client IP stores a UUID, optional conversation UUID,
+UTC timestamp, question, answer, returned sources (JSON), status, latency, model, and error
+class/code. Status is `processing`, `success`, `error`, or `rate_limited`. IP and full
+conversation history are not copied into these rows. Invalid request bodies are not recorded.
+The frontend sends an optional `conversation_id` UUID, persists it across reloads, and rotates
+it on New chat. Older clients remain compatible but their rows have no conversation ID.
+New chat clears browser history only; it does not delete server records.
+
+Rows are retained until explicitly deleted by the operator; quota cleanup never deletes history.
+Back up the SQLite file using SQLite's backup command/API. There is no public history endpoint.
+If initial history storage fails the request returns 503 before calling the model. If finalization
+fails or the process stops mid-request, the saved row can remain `processing`; finalization
+failure is logged without discarding the answer. Returned sources include retrieval candidates,
+not necessarily only sources cited in the answer.
+
+Inspect recent questions locally:
+
+```bash
+sqlite3 -header -column data/chat_usage.sqlite3 \
+  "SELECT created_at, question, status, latency_ms FROM chat_requests ORDER BY created_at DESC LIMIT 20;"
+```
+
+`DEBUG_RETRIEVAL=true` additionally emits retrieval details through configured Python INFO logging.
 
 For the existing **local Cloudflare Tunnel**, set `TRUST_CLOUDFLARE_TUNNEL=true` in `.env`
 and start the API with:
