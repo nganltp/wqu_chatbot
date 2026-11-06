@@ -18,6 +18,11 @@ def main() -> None:
         help="Directory for complete, pre-chunk Help Center documents.",
     )
     parser.add_argument("--verbose", action="store_true")
+    parser.add_argument(
+        "--replace-output",
+        action="store_true",
+        help="Delete existing metadata/ and content/ files in --output-dir before crawling.",
+    )
     args = parser.parse_args()
 
     progress = (
@@ -28,6 +33,8 @@ def main() -> None:
     crawler = HelpCenterCrawler(
         delay_seconds=args.delay, timeout_seconds=args.timeout, raw_output=args.output_dir
     )
+    if args.replace_output:
+        crawler.clear_raw_documents()
     documents = crawler.crawl(max_pages=args.max_pages, on_page=progress)
     if not documents:
         raise RuntimeError("No WQU Help Center documents were found.")

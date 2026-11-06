@@ -54,6 +54,12 @@ class VectorStore:
             self.client.upsert(self.settings.qdrant_collection, points=points, wait=True)
         self.keyword_index = None
 
+    def reset(self) -> None:
+        """Delete the configured collection so the next upsert is a complete replacement."""
+        if self.client.collection_exists(self.settings.qdrant_collection):
+            self.client.delete_collection(self.settings.qdrant_collection)
+        self.keyword_index = None
+
     def search(self, query: str, limit: int | None = None) -> list[tuple[SourceChunk, float]]:
         self.ensure_collection()
         results = self.client.query_points(

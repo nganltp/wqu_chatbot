@@ -45,14 +45,14 @@ The data model already supports `course` and `chapter` metadata, so authorised c
 4. Crawl the public Help Center to local documents only:
 
    ```bash
-   python -m wqu_chatbot.crawl_help --verbose
+   python -m wqu_chatbot.crawl_help --replace-output --verbose
    ```
 
 5. Review or edit the complete local documents in `data/wqu_help_raw/documents/help/`, then
    chunk and index them:
 
    ```bash
-   python -m wqu_chatbot.ingest_help
+   python -m wqu_chatbot.reindex_help
    ```
 
 6. Start the API:
@@ -63,14 +63,15 @@ The data model already supports `course` and `chapter` metadata, so authorised c
 
    The health endpoint is available at `http://127.0.0.1:8000/health`.
 
-`crawl_help` never chunks or writes to Qdrant. It stores one complete source document per Help Center
+`crawl_help` never chunks or writes to Qdrant. Pass `--replace-output` to delete only the previous
+generated `metadata/` and `content/` folders before saving the new snapshot. It stores one complete source document per Help Center
 article at `data/wqu_help_raw/documents/help/`: `metadata/help-<id>.json` holds metadata and
-`content/help-<id>.md` holds the full extracted content. The two files share the same ID. `ingest_help`
-reads only these local folders, then chunks and writes to Qdrant. A new crawl updates matching local
-document files; stable chunk IDs allow the later ingest to upsert existing records.
+`content/help-<id>.md` holds the full extracted content. The two files share the same ID.
+`reindex_help --input-dir <folder>` only accepts WQU Help Center article documents, deletes the
+configured Qdrant collection, then chunks and indexes that folder's current Help Center snapshot.
 
-Use `crawl_help --output-dir <directory>` or `ingest_help --input-dir <directory>` to use another
-local source directory.
+Use `crawl_help --output-dir <directory>` or `reindex_help --input-dir <directory>` to use another
+WQU Help Center snapshot directory.
 
 To save an authorised WQU SCORM launch as one complete, pre-chunk learning document (without
 quiz/answer blocks), run `python -m wqu_chatbot.ingest_scorm '<launch URL>'`. Its default output

@@ -5,6 +5,7 @@ from collections import deque
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from shutil import rmtree
 from urllib.parse import urljoin, urlparse, urlunparse
 
 import requests
@@ -30,7 +31,26 @@ def _is_allowed(url: str) -> bool:
 
 
 def _text(element) -> str:
+    if element:
+        for protected_email in element.select("[data-cfemail]"):
+            decoded = _decode_cloudflare_email(protected_email.get("data-cfemail", ""))
+            if decoded:
+                protected_email.replace_with(decoded)
     return element.get_text("\n", strip=True) if element else ""
+
+
+def _decode_cloudflare_email(value: str) -> str | None:
+    """Decode Cloudflare's `data-cfemail` attribute without executing page JavaScript."""
+    try:
+        encoded = bytes.fromhex(value)
+    except ValueError:
+        return None
+    if len(encoded) < 2:
+        return None
+    try:
+        return bytes(byte ^ encoded[0] for byte in encoded[1:]).decode("utf-8")
+    except UnicodeDecodeError:
+        return None
 
 
 class HelpCenterCrawler:
@@ -98,6 +118,15 @@ class HelpCenterCrawler:
         if self.raw_output is None:
             return
         self.raw_output.mkdir(parents=True, exist_ok=True)
+
+    def clear_raw_documents(self) -> None:
+        """Remove only generated document files from the configured local source store."""
+        if self.raw_output is None:
+            return
+        for directory_name in ("metadata", "content"):
+            directory = self.raw_output / directory_name
+            if directory.is_dir():
+                rmtree(directory)
 
     def _save_raw_document(
         self, *, url: str, title: str, category: str | None, content: str

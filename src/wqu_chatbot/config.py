@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     hybrid_keyword_candidates: int = 10
     hybrid_min_keyword_score: float = 1.0
     hybrid_rrf_rank_constant: int = 60
+    debug_retrieval: bool = False
 
 
 @lru_cache
