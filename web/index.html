@@ -3,45 +3,192 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>WQU Support Chatbot</title>
-    <style>
-      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, sans-serif; color: #172033; background: #f4f6fb; }
-      body { margin: 0; }
-      main { max-width: 760px; min-height: 100vh; margin: auto; padding: 32px 18px; box-sizing: border-box; }
-      h1 { margin: 0; font-size: 1.7rem; } p { color: #5d687c; line-height: 1.5; }
-      .chat-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; } .chat-header p { margin: 8px 0 0; }
-      #chat { display: grid; gap: 14px; margin: 28px 0; }
-      .message { padding: 14px 16px; border-radius: 12px; background: white; box-shadow: 0 1px 4px #17203312; white-space: pre-wrap; line-height: 1.5; }
-      .markdown > :first-child { margin-top: 0; } .markdown > :last-child { margin-bottom: 0; } .markdown p, .markdown ul, .markdown ol { margin: 0 0 12px; } .markdown li + li { margin-top: 4px; } .markdown code { padding: 1px 4px; border-radius: 4px; background: #edf1f8; } .markdown pre { overflow-x: auto; padding: 12px; border-radius: 8px; background: #172033; color: #f4f6fb; } .markdown pre code { padding: 0; background: transparent; color: inherit; }
-      .user { background: #e5edff; margin-left: 48px; } .assistant { margin-right: 24px; }
-      .sources { margin: 10px 0 0; padding-left: 20px; font-size: .9rem; } .sources a { color: #2458c6; }
-      .sample-questions { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; } .sample-questions[hidden] { display: none; } .sample-question { padding: 8px 10px; border: 1px solid #c9d2e3; background: white; color: #2458c6; font-size: .9rem; }
-      form { display: flex; gap: 10px; position: sticky; bottom: 10px; padding: 10px; border-radius: 14px; background: #fff; box-shadow: 0 4px 24px #1720331c; }
-      input { flex: 1; min-width: 0; border: 1px solid #c9d2e3; border-radius: 9px; padding: 12px; font: inherit; }
-      button { border: 0; border-radius: 9px; padding: 12px 16px; background: #1e54c5; color: white; font: inherit; cursor: pointer; }
-      .secondary { align-self: flex-end; background: #e5edff; color: #1e54c5; white-space: nowrap; }
-      button:disabled { opacity: .6; cursor: wait; } .error { color: #b42318; }
-    </style>
+    <meta name="theme-color" content="#122c34" />
+    <meta
+      name="description"
+      content="Your community-built guide to WQU. Ask in your native language and explore answers with sources."
+    />
+    <title>WQU Study Companion</title>
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <main>
-      <div class="chat-header">
+    <aside class="sidebar">
+      <a class="brand" href="./"
+        ><span class="brand-mark" aria-hidden="true">w.</span
+        ><span>WQU<span class="brand-subtitle">STUDY COMPANION</span></span></a
+      >
+      <span class="community-badge">Community project</span>
+      <div class="sidebar-section">YOUR WORKSPACE</div>
+      <div class="workspace active">
+        <span aria-hidden="true">◈</span> Help Center
+        <span class="live-dot" aria-hidden="true"></span>
+      </div>
+      <div class="workspace upcoming">
+        <span aria-hidden="true">▤</span
+        ><span>Lectures & readings<small>Coming soon</small></span>
+      </div>
+      <div class="sidebar-note">
+        <span class="note-symbol" aria-hidden="true">✦</span>
+        <h2>A little clarity goes a long way.</h2>
+        <p>
+          Find your next step, understand the process, and get back to learning.
+        </p>
+      </div>
+      <a
+        class="github-link"
+        href="https://github.com/nganltp/wqu_chatbot/"
+        target="_blank"
+        rel="noreferrer"
+        >☆ Star the project <span aria-hidden="true">↗</span></a
+      >
+      <p class="independent">
+        Built by a learner, for learners.<br />Not affiliated with or endorsed
+        by WQU.
+      </p>
+    </aside>
+    <div class="app-shell">
+      <header class="topbar">
         <div>
-          <h1>WQU Support Chatbot</h1>
-          <p>Ask a question about WQU procedures. Answers include links to the official source.</p>
+          <span class="mobile-brand">WQU Study Companion</span
+          ><span class="desktop-title">Your learning workspace</span
+          ><span class="topbar-divider">/</span
+          ><span class="section-title">Help Center</span>
         </div>
-        <button id="clear-chat" class="secondary" type="button">New chat</button>
-      </div>
-      <section id="chat" aria-live="polite"></section>
-      <div class="sample-questions" aria-label="Sample questions">
-        <button class="sample-question" type="button" data-question="How can I contact WQU student support?">How can I contact student support?</button>
-        <button class="sample-question" type="button" data-question="How can I update or correct my name on my WQU student profile?">How can I update my name?</button>
-      </div>
-      <form id="chat-form">
-        <input id="question" placeholder="Ask a WQU support question" autocomplete="off" required />
-        <button id="send" type="submit">Send</button>
-      </form>
-    </main>
+        <button id="clear-chat" class="new-chat" type="button">
+          <span aria-hidden="true">＋</span> New chat
+        </button>
+      </header>
+      <main id="main-content">
+        <section
+          class="sample-questions welcome"
+          aria-label="Welcome and sample questions"
+        >
+          <div class="eyebrow">
+            <span></span> A LITTLE GUIDANCE, WHEN YOU NEED IT
+          </div>
+          <h1>Big questions.<br /><em>Clear next steps.</em></h1>
+          <p class="welcome-description">
+            Your companion for navigating WQU. Ask in your native language, and
+            find answers grounded in the Help Center.
+          </p>
+          <div class="welcome-tags">
+            <span>↗ Linked to sources</span><span>◎ In your language</span>
+          </div>
+          <div class="suggestion-heading">
+            Where would you like to start?<span>CHOOSE A QUESTION</span>
+          </div>
+          <div class="suggestion-grid">
+            <button
+              class="sample-question"
+              type="button"
+              data-question="What are the admission requirements for WQU?"
+            >
+              <span class="card-top"
+                ><span class="card-icon">↗</span
+                ><span class="card-category">GETTING STARTED</span></span
+              ><span class="card-title">Ready to apply?</span
+              ><span class="card-description"
+                >Explore admission requirements.</span
+              ><span class="card-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button
+              class="sample-question"
+              type="button"
+              data-question="When and how can I register for my next course?"
+            >
+              <span class="card-top"
+                ><span class="card-icon">▦</span
+                ><span class="card-category">COURSE REGISTRATION</span></span
+              ><span class="card-title">Plan your next course</span
+              ><span class="card-description"
+                >Find out when and how to register.</span
+              ><span class="card-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button
+              class="sample-question"
+              type="button"
+              data-question="How do I submit my official transcript to WQU?"
+            >
+              <span class="card-top"
+                ><span class="card-icon">▤</span
+                ><span class="card-category">DOCUMENTS</span></span
+              ><span class="card-title">Get your documents in order</span
+              ><span class="card-description"
+                >Learn how to submit your transcript.</span
+              ><span class="card-arrow" aria-hidden="true">↗</span>
+            </button>
+            <button
+              class="sample-question"
+              type="button"
+              data-question="How can I contact WQU student support?"
+            >
+              <span class="card-top"
+                ><span class="card-icon">◌</span
+                ><span class="card-category">STUDENT SUPPORT</span></span
+              ><span class="card-title">A helping hand</span
+              ><span class="card-description"
+                >Connect with student support.</span
+              ><span class="card-arrow" aria-hidden="true">↗</span>
+            </button>
+          </div>
+          <div class="coming-next">
+            <span class="next-label">UP NEXT</span
+            ><span>Make sense of lectures & readings.</span
+            ><span class="soon-badge">Coming soon</span>
+          </div>
+        </section>
+        <section
+          id="chat"
+          role="log"
+          aria-label="Conversation"
+          aria-live="polite"
+          aria-relevant="additions"
+        ></section>
+        <div id="thinking" role="status" hidden>
+          <span class="thinking-dots" aria-hidden="true">•••</span> Finding an
+          answer in the WQU Help Center…
+        </div>
+      </main>
+      <footer class="composer-area">
+        <div class="composer-inner">
+          <form id="chat-form">
+            <label class="sr-only" for="question">Your question</label
+            ><textarea
+              id="question"
+              rows="1"
+              maxlength="4000"
+              placeholder="What would you like to know?"
+              required
+            ></textarea
+            ><button id="send" type="submit" aria-label="Send question">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.8"
+                aria-hidden="true"
+              >
+                <path d="M12 19V5m-6 6 6-6 6 6" />
+              </svg>
+            </button>
+          </form>
+          <div class="composer-meta">
+            <span
+              >10 questions per public IP / day
+              <span class="reset-note"
+                >· Resets at midnight, Singapore time (UTC+8)</span
+              ></span
+            ><span class="keyboard-hint"
+              >Enter to send · Shift + Enter for a new line</span
+            >
+          </div>
+          <p class="disclaimer">
+            Independent community project. AI can make mistakes; check the
+            sources. Questions and answers are saved to improve this project.
+          </p>
+        </div>
+      </footer>
+    </div>
     <script src="config.js"></script>
     <script src="app.js"></script>
   </body>

@@ -4,6 +4,7 @@ const form = document.querySelector("#chat-form");
 const questionInput = document.querySelector("#question");
 const sendButton = document.querySelector("#send");
 const clearChatButton = document.querySelector("#clear-chat");
+const thinking = document.querySelector("#thinking");
 const sampleQuestions = document.querySelector(".sample-questions");
 const HISTORY_STORAGE_KEY = "wqu-chat-history-v1";
 const CONVERSATION_STORAGE_KEY = "wqu-chat-conversation-v1";
@@ -13,23 +14,34 @@ function loadConversationId(reset = false) {
   let id;
   try {
     id = reset ? null : window.localStorage.getItem(CONVERSATION_STORAGE_KEY);
-  } catch { /* Storage may be unavailable. */ }
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || "")) {
+  } catch {
+    /* Storage may be unavailable. */
+  }
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      id || "",
+    )
+  ) {
     id = crypto.randomUUID();
   }
   try {
     window.localStorage.setItem(CONVERSATION_STORAGE_KEY, id);
-  } catch { /* Keep the ID in memory for this page. */ }
+  } catch {
+    /* Keep the ID in memory for this page. */
+  }
   return id;
 }
 
 const MAX_HISTORY_MESSAGES = 12;
-const INLINE_MARKDOWN = /(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
+const INLINE_MARKDOWN =
+  /(\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|\*\*([^*]+)\*\*|`([^`]+)`|\*([^*]+)\*)/g;
 const history = loadHistory();
 
 function loadHistory() {
   try {
-    const storedHistory = JSON.parse(window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]");
+    const storedHistory = JSON.parse(
+      window.localStorage.getItem(HISTORY_STORAGE_KEY) || "[]",
+    );
     if (!Array.isArray(storedHistory)) return [];
     return storedHistory
       .filter(
@@ -42,7 +54,8 @@ function loadHistory() {
       .map((message) => ({
         role: message.role,
         content: message.content,
-        sources: message.role === "assistant" ? normalizeSources(message.sources) : [],
+        sources:
+          message.role === "assistant" ? normalizeSources(message.sources) : [],
       }))
       .slice(-MAX_HISTORY_MESSAGES);
   } catch {
@@ -53,7 +66,11 @@ function loadHistory() {
 function normalizeSources(sources) {
   if (!Array.isArray(sources)) return [];
   return sources.flatMap((source) => {
-    if (typeof source?.label !== "string" || typeof source.title !== "string" || typeof source.url !== "string") {
+    if (
+      typeof source?.label !== "string" ||
+      typeof source.title !== "string" ||
+      typeof source.url !== "string"
+    ) {
       return [];
     }
     try {
@@ -85,7 +102,9 @@ function saveHistory() {
 function appendInlineMarkdown(container, text) {
   let lastIndex = 0;
   for (const match of text.matchAll(INLINE_MARKDOWN)) {
-    container.append(document.createTextNode(text.slice(lastIndex, match.index)));
+    container.append(
+      document.createTextNode(text.slice(lastIndex, match.index)),
+    );
     if (match[2]) {
       const link = document.createElement("a");
       link.href = match[3];
@@ -153,7 +172,8 @@ function renderMarkdown(text) {
     }
 
     const heading = line.match(/^(#{1,3})\s+(.+)$/);
-    const listItem = line.match(/^(\d+)\.\s+(.+)$/) || line.match(/^[-*]\s+(.+)$/);
+    const listItem =
+      line.match(/^(\d+)\.\s+(.+)$/) || line.match(/^[-*]\s+(.+)$/);
     if (heading) {
       flushParagraph();
       flushList();
@@ -197,9 +217,18 @@ function addMessage(text, role, sources = [], scroll = true) {
   message.className = `message ${role}`;
   const content = document.createElement("div");
   content.append(renderMarkdown(text));
+  if (role === "assistant") {
+    const label = document.createElement("div");
+    label.className = "message-label";
+    label.textContent = "STUDY COMPANION";
+    message.append(label);
+  }
   message.append(content);
 
-  const displayedSources = role === "assistant" ? citedSources(text, sources) : normalizeSources(sources);
+  const displayedSources =
+    role === "assistant"
+      ? citedSources(text, sources)
+      : normalizeSources(sources);
   if (displayedSources.length) {
     const list = document.createElement("ul");
     list.className = "sources";
@@ -213,7 +242,13 @@ function addMessage(text, role, sources = [], scroll = true) {
       item.append(link);
       list.append(item);
     }
-    message.append(list);
+    const details = document.createElement("details");
+    details.className = "sources-details";
+    details.open = true;
+    const summary = document.createElement("summary");
+    summary.textContent = `${displayedSources.length} source${displayedSources.length === 1 ? "" : "s"} · Explore the references`;
+    details.append(summary, list);
+    message.append(details);
   }
   chat.append(message);
   if (scroll) message.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -228,7 +263,11 @@ function restoreHistory() {
 function appendExchange(question, answer, sources) {
   history.push(
     { role: "user", content: question, sources: [] },
-    { role: "assistant", content: answer, sources: citedSources(answer, sources) },
+    {
+      role: "assistant",
+      content: answer,
+      sources: citedSources(answer, sources),
+    },
   );
   if (history.length > MAX_HISTORY_MESSAGES) {
     history.splice(0, history.length - MAX_HISTORY_MESSAGES);
@@ -239,9 +278,15 @@ function appendExchange(question, answer, sources) {
 function clearChat() {
   history.splice(0, history.length);
   conversationId = loadConversationId(true);
-  try { window.localStorage.removeItem(HISTORY_STORAGE_KEY); } catch { /* Optional storage. */ }
+  try {
+    window.localStorage.removeItem(HISTORY_STORAGE_KEY);
+  } catch {
+    /* Optional storage. */
+  }
   chat.replaceChildren();
   sampleQuestions.hidden = false;
+  questionInput.value = "";
+  resizeInput();
   questionInput.focus();
 }
 
@@ -253,41 +298,67 @@ clearChatButton.addEventListener("click", clearChat);
 for (const button of document.querySelectorAll(".sample-question")) {
   button.addEventListener("click", () => {
     questionInput.value = button.dataset.question || "";
+    resizeInput();
     questionInput.focus();
   });
 }
 
+function resizeInput() {
+  questionInput.style.height = "auto";
+  questionInput.style.height = `${Math.min(questionInput.scrollHeight, 160)}px`;
+}
+questionInput.addEventListener("input", resizeInput);
+questionInput.addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+    event.preventDefault();
+    if (!sendButton.disabled) form.requestSubmit();
+  }
+});
+
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const question = questionInput.value.trim();
-  if (!question) return;
+  if (!question || sendButton.disabled) return;
   if (!config?.apiBaseUrl || config.apiBaseUrl.includes("replace-with-your")) {
-    addMessage("The API URL is not configured. Update web/config.js and deploy again.", "error");
+    addMessage(
+      "The API URL is not configured. Update web/config.js and deploy again.",
+      "error",
+    );
     return;
   }
 
   addMessage(question, "user");
   sampleQuestions.hidden = true;
   questionInput.value = "";
+  resizeInput();
+  thinking.hidden = false;
+  chat.setAttribute("aria-busy", "true");
+  thinking.scrollIntoView({ behavior: "smooth", block: "end" });
   sendButton.disabled = true;
   clearChatButton.disabled = true;
   try {
-    const response = await fetch(`${config.apiBaseUrl.replace(/\/$/, "")}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        question,
-        conversation_id: conversationId,
-        history: history.map(({ role, content }) => ({ role, content })),
-      }),
-    });
+    const response = await fetch(
+      `${config.apiBaseUrl.replace(/\/$/, "")}/chat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question,
+          conversation_id: conversationId,
+          history: history.map(({ role, content }) => ({ role, content })),
+        }),
+      },
+    );
     const data = await response.json();
-    if (!response.ok) throw new Error(data.detail || "The chat service is unavailable.");
+    if (!response.ok)
+      throw new Error(data.detail || "The chat service is unavailable.");
     addMessage(data.answer, "assistant", data.sources);
     appendExchange(question, data.answer, data.sources);
   } catch (error) {
     addMessage(error.message || "Unable to reach the chat service.", "error");
   } finally {
+    thinking.hidden = true;
+    chat.setAttribute("aria-busy", "false");
     sendButton.disabled = false;
     clearChatButton.disabled = false;
     questionInput.focus();

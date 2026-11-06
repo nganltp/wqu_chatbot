@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     debug_retrieval: bool = False
     daily_question_limit: int = Field(default=10, ge=1)
     rate_limit_db_path: str = "data/chat_usage.sqlite3"
-    rate_limit_timezone: str = "Asia/Ho_Chi_Minh"
+    rate_limit_timezone: str = "Asia/Singapore"
     trust_cloudflare_tunnel: bool = False
 
 

@@ -8,13 +8,13 @@ from starlette.requests import Request
 from wqu_chatbot.rate_limit import DailyQuota, client_ip
 
 
-def test_quota_persists_and_resets_at_vietnam_midnight(tmp_path):
+def test_quota_persists_and_resets_at_singapore_midnight(tmp_path):
     path = str(tmp_path / "usage.sqlite3")
-    before = datetime(2026, 11, 6, 16, 59, 59, tzinfo=UTC)
-    after = datetime(2026, 11, 6, 17, 0, 0, tzinfo=UTC)
+    before = datetime(2026, 11, 6, 15, 59, 59, tzinfo=UTC)
+    after = datetime(2026, 11, 6, 16, 0, 0, tzinfo=UTC)
     for _ in range(10):
-        DailyQuota(path, 10, "Asia/Ho_Chi_Minh").consume("192.0.2.1", before)
-    quota = DailyQuota(path, 10, "Asia/Ho_Chi_Minh")
+        DailyQuota(path, 10, "Asia/Singapore").consume("192.0.2.1", before)
+    quota = DailyQuota(path, 10, "Asia/Singapore")
     with pytest.raises(HTTPException) as caught:
         quota.consume("192.0.2.1", before)
     assert caught.value.status_code == 429
@@ -28,7 +28,7 @@ def test_concurrent_requests_cannot_exceed_limit(tmp_path):
 
     def attempt(_):
         try:
-            DailyQuota(path, 10, "Asia/Ho_Chi_Minh").consume("192.0.2.1")
+            DailyQuota(path, 10, "Asia/Singapore").consume("192.0.2.1")
             return 200
         except HTTPException as error:
             return error.status_code

@@ -107,7 +107,7 @@ All configuration is loaded from `.env`.
 | `CORS_ORIGINS` | local development origins | Comma-separated browser origins allowed to call the API. |
 | `DAILY_QUESTION_LIMIT` | `10` | Accepted questions per public IP per calendar day. |
 | `RATE_LIMIT_DB_PATH` | `data/chat_usage.sqlite3` | Persistent SQLite quota database shared by local workers. |
-| `RATE_LIMIT_TIMEZONE` | `Asia/Ho_Chi_Minh` | Timezone for midnight quota reset. |
+| `RATE_LIMIT_TIMEZONE` | `Asia/Singapore` | Timezone for midnight quota reset. |
 | `TRUST_CLOUDFLARE_TUNNEL` | `false` | Trust visitor IP headers only from a loopback tunnel connection. |
 | `TOP_K` | `5` | Number of chunks sent to the LLM after hybrid ranking. |
 | `MIN_RETRIEVAL_SCORE` | `0.35` | Minimum dense cosine similarity for a dense candidate. |
@@ -165,7 +165,7 @@ If no sufficiently relevant content is found, the API returns a safe fallback re
 ## Daily question limit and logging
 
 `POST /chat` accepts up to 10 validated questions per IP per day, resetting at midnight
-in `Asia/Ho_Chi_Minh`. The 11th request returns HTTP 429 with a readable `detail` and
+in `Asia/Singapore`. The 11th request returns HTTP 429 with a readable `detail` and
 `Retry-After` in seconds; the existing frontend displays this message. Quota is reserved
 atomically before retrieval/model calls, including requests that later fail with 503.
 Invalid request bodies and `/health` do not consume quota. New chat does not reset it.

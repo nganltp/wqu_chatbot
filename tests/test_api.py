@@ -25,7 +25,7 @@ def test_chat_quota_blocks_before_generation_and_ignores_invalid_body(tmp_path, 
 
     service = Mock()
     service.answer.return_value = ChatResponse(answer="Answer", sources=[])
-    quota = DailyQuota(str(tmp_path / "usage.sqlite3"), 10, "Asia/Ho_Chi_Minh")
+    quota = DailyQuota(str(tmp_path / "usage.sqlite3"), 10, "Asia/Singapore")
     monkeypatch.setattr(api, "get_quota", lambda: quota)
     monkeypatch.setattr(api, "get_service", lambda: service)
     client = TestClient(app)
@@ -55,7 +55,7 @@ def test_failed_generation_counts_toward_quota(tmp_path, monkeypatch):
 
     service = Mock()
     service.answer.side_effect = RuntimeError("unavailable")
-    quota = DailyQuota(str(tmp_path / "usage.sqlite3"), 1, "Asia/Ho_Chi_Minh")
+    quota = DailyQuota(str(tmp_path / "usage.sqlite3"), 1, "Asia/Singapore")
     monkeypatch.setattr(api, "get_quota", lambda: quota)
     monkeypatch.setattr(api, "get_service", lambda: service)
     client = TestClient(app)
