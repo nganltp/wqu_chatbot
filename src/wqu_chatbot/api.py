@@ -1,11 +1,12 @@
 from functools import lru_cache
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
 from .models import ChatRequest, ChatResponse
 from .rag import RAGService
+from .rate_limit import DailyQuota, client_ip
 
 app = FastAPI(title="WQU Support Chatbot", version="0.1.0")
 settings = get_settings()
@@ -25,15 +26,25 @@ def get_service() -> RAGService:
     return RAGService()
 
 
+@lru_cache
+def get_quota() -> DailyQuota:
+    return DailyQuota(
+        settings.rate_limit_db_path, settings.daily_question_limit, settings.rate_limit_timezone
+    )
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
+def chat(request: ChatRequest, http_request: Request) -> ChatResponse:
     try:
+        get_quota().consume(client_ip(http_request, settings.trust_cloudflare_tunnel))
         return get_service().answer(request.question, request.history)
+    except HTTPException:
+        raise
     except Exception as error:
         raise HTTPException(
             status_code=503, detail="Chat service is temporarily unavailable"

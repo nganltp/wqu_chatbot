@@ -58,7 +58,7 @@ The data model already supports `course` and `chapter` metadata, so authorised c
 6. Start the API:
 
    ```bash
-   uvicorn wqu_chatbot.api:app --reload
+   uvicorn wqu_chatbot.api:app --reload --no-proxy-headers
    ```
 
    The health endpoint is available at `http://127.0.0.1:8000/health`.
@@ -105,6 +105,10 @@ All configuration is loaded from `.env`.
 | `OPENAI_MODEL` | `gpt-5.6-luna` | OpenAI model used for chat generation. |
 | `OPENAI_REASONING_EFFORT` | `low` | Reasoning effort: `none`, `low`, `medium`, `high`, `xhigh`, or `max`. |
 | `CORS_ORIGINS` | local development origins | Comma-separated browser origins allowed to call the API. |
+| `DAILY_QUESTION_LIMIT` | `10` | Accepted questions per public IP per calendar day. |
+| `RATE_LIMIT_DB_PATH` | `data/chat_usage.sqlite3` | Persistent SQLite quota database shared by local workers. |
+| `RATE_LIMIT_TIMEZONE` | `Asia/Ho_Chi_Minh` | Timezone for midnight quota reset. |
+| `TRUST_CLOUDFLARE_TUNNEL` | `false` | Trust visitor IP headers only from a loopback tunnel connection. |
 | `TOP_K` | `5` | Number of chunks sent to the LLM after hybrid ranking. |
 | `MIN_RETRIEVAL_SCORE` | `0.35` | Minimum dense cosine similarity for a dense candidate. |
 | `HYBRID_DENSE_CANDIDATES` | `10` | Dense candidates collected before fusion. |
@@ -158,6 +162,38 @@ An optional `history` array accepts up to 12 `user` or `assistant` messages:
 
 If no sufficiently relevant content is found, the API returns a safe fallback response and no sources.
 
+## Daily question limit and logging
+
+`POST /chat` accepts up to 10 validated questions per IP per day, resetting at midnight
+in `Asia/Ho_Chi_Minh`. The 11th request returns HTTP 429 with a readable `detail` and
+`Retry-After` in seconds; the existing frontend displays this message. Quota is reserved
+atomically before retrieval/model calls, including requests that later fail with 503.
+Invalid request bodies and `/health` do not consume quota. New chat does not reset it.
+
+SQLite retains the current day's IP/count, survives restarts, and shares counts across
+workers using the same database file. Old days are removed on subsequent accepted requests.
+Keep this file on persistent local storage; separate hosts need a shared quota service.
+Users sharing a public IP share a quota; changing network/VPN/IP can bypass an IP-only limit.
+
+There is no central question history: the browser stores recent conversation in localStorage.
+`DEBUG_RETRIEVAL=true` emits question/retrieval details through Python INFO logging when
+configured by the operator; it is not a durable question audit log. The quota database stores
+only IP, date, and count, not question text or answers.
+
+For the existing **local Cloudflare Tunnel**, set `TRUST_CLOUDFLARE_TUNNEL=true` in `.env`
+and start the API with:
+
+```bash
+uvicorn wqu_chatbot.api:app --host 127.0.0.1 --port 8000 --no-proxy-headers
+```
+
+Point cloudflared at `http://127.0.0.1:8000`. Keep the backend reachable only locally.
+The app reads [Cloudflare's CF-Connecting-IP](https://developers.cloudflare.com/fundamentals/reference/http-headers/)
+only from loopback peers when explicitly enabled. [Uvicorn's --no-proxy-headers](https://uvicorn.dev/settings/)
+keeps that peer check tied to the actual connection. Do not expose a trusted local proxy that
+passes user-supplied headers through unchanged. For direct connections leave tunnel trust disabled
+and also use `--no-proxy-headers`; X-Forwarded-For is not used by the app.
+
 ## Inspect indexed content
 
 Export the indexed chunks as readable text:
@@ -199,7 +235,7 @@ The static frontend can be hosted on Cloudflare Pages while the FastAPI backend 
 
 Quick Tunnel URLs change after a restart. For a stable deployment, use a named Cloudflare Tunnel and a dedicated domain.
 
-`web/config.js` is public and intentionally ignored by Git. Never place `OPENAI_API_KEY`, `HF_TOKEN`, or another secret in that file. The demo has no authentication or rate limiting, so protect the API before sharing it broadly.
+`web/config.js` is public and intentionally ignored by Git. Never place `OPENAI_API_KEY`, `HF_TOKEN`, or another secret in that file. The demo has a daily IP quota but no authentication.
 
 ## Tests
 

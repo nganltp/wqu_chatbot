@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Literal
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -25,6 +26,10 @@ class Settings(BaseSettings):
     hybrid_min_keyword_score: float = 1.0
     hybrid_rrf_rank_constant: int = 60
     debug_retrieval: bool = False
+    daily_question_limit: int = Field(default=10, ge=1)
+    rate_limit_db_path: str = "data/chat_usage.sqlite3"
+    rate_limit_timezone: str = "Asia/Ho_Chi_Minh"
+    trust_cloudflare_tunnel: bool = False
 
 
 @lru_cache
